@@ -26,7 +26,7 @@ validate:
     - helm template $RELEASE_NAME $HELM_CHART_PATH --dry-run --debug
     - echo "Validating cluster connectivity..."
     - kubectl cluster-info
-    - kubectl get namespace $NAMESPACE || kubectl create namespace $NAMESPACE
+    - kubectl get namespace $NAMESPACE
   only:
     - main
     - develop
@@ -51,12 +51,11 @@ deploy:
     - |
       helm upgrade --install $RELEASE_NAME $HELM_CHART_PATH \
         --namespace $NAMESPACE \
-        --create-namespace \
-        --set auth.adminPassword="$KEYCLOAK_ADMIN_PASSWORD" \
-        --set database.hostname="$RDS_ENDPOINT" \
-        --set database.username="$DB_USERNAME" \
-        --set database.password="$DB_PASSWORD" \
-        --set database.database="$DB_NAME" \
+        --set auth.adminPassword="$keycloak_password" \
+        --set database.hostname="$db_url" \
+        --set database.username="$db_username" \
+        --set database.password="$db_password" \
+        --set database.database="$db_name" \
         --wait \
         --timeout=15m \
         --atomic

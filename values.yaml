@@ -17,16 +17,16 @@ image:
 ## Keycloak Admin Configuration
 auth:
   adminUser: admin
-  adminPassword: ""  # Set via GitLab CI
+  adminPassword: ""  # Set via GitLab CI (keycloak_admin_password)
 
 ## Database Configuration
 database:
   vendor: postgres
-  hostname: ""  # Set via GitLab CI
+  hostname: ""  # Set via GitLab CI (db_url)
   port: 5432
-  database: ""  # Set via GitLab CI
-  username: ""  # Set via GitLab CI
-  password: ""  # Set via GitLab CI
+  database: ""  # Set via GitLab CI (db_name)
+  username: ""  # Set via GitLab CI (db_username)
+  password: ""  # Set via GitLab CI (db_password)
   existingSecret: keycloak-db-secret
 
 ## Deployment Configuration
