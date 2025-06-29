@@ -23,7 +23,7 @@ auth:
 database:
   vendor: postgres
   hostname: ""  # Set via GitLab CI (db_url)
-  port: 5432
+  port: 5433
   database: ""  # Set via GitLab CI (db_name)
   username: ""  # Set via GitLab CI (db_username)
   password: ""  # Set via GitLab CI (db_password)
@@ -35,11 +35,11 @@ replicaCount: 2
 ## Resource Configuration
 resources:
   limits:
-    cpu: 2000m
-    memory: 2Gi
-  requests:
     cpu: 1000m
     memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 500Mi
 
 ## Service Configuration
 service:

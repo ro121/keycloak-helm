@@ -7,7 +7,6 @@ metadata:
     {{- include "keycloak.labels" . | nindent 4 }}
 data:
   KC_DB: {{ .Values.database.vendor }}
-  KC_DB_URL_PORT: {{ .Values.database.port | quote }}
   KC_HOSTNAME_STRICT: "false"
   KC_HTTP_ENABLED: "true"
   KC_PROXY: "edge"
