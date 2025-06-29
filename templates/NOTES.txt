@@ -1,0 +1,28 @@
+1. Get the application URL by running these commands:
+{{- if .Values.ingress.enabled }}
+  http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.hostname }}{{ .Values.ingress.path }}
+{{- else if contains "NodePort" .Values.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Values.global.namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services keycloak)
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Values.global.namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.service.type }}
+     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+           You can watch the status of by running 'kubectl get --namespace {{ .Values.global.namespace }} svc -w keycloak'
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Values.global.namespace }} keycloak --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo http://$SERVICE_IP:{{ .Values.service.port }}
+{{- else if contains "ClusterIP" .Values.service.type }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Values.global.namespace }} -l "app.kubernetes.io/name=keycloak,app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Values.global.namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace {{ .Values.global.namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+{{- end }}
+
+2. Access Keycloak Admin Console:
+   URL: {{ if .Values.ingress.enabled }}http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.hostname }}/admin{{ else }}http://localhost:8080/admin{{ end }}
+   Username: {{ .Values.auth.adminUser }}
+   Password: Use the password from GitLab CI variable
+
+3. Check deployment status:
+   kubectl get pods -n {{ .Values.global.namespace }} -l app.kubernetes.io/name=keycloak
+   kubectl get svc -n {{ .Values.global.namespace }} -l app.kubernetes.io/name=keycloak
+   kubectl get ingress -n {{ .Values.global.namespace }}

@@ -1,0 +1,148 @@
+# Default values for keycloak
+# This will be overridden by GitLab CI variables
+
+## Global Configuration
+global:
+  namespace: microservice-dev
+
+## Image Configuration
+image:
+  registry: quay.io
+  repository: keycloak/keycloak
+  tag: "23.0.3"
+  pullPolicy: IfNotPresent
+  pullSecrets:
+    - name: gitlab
+
+## Keycloak Admin Configuration
+auth:
+  adminUser: admin
+  adminPassword: ""  # Set via GitLab CI
+
+## Database Configuration
+database:
+  vendor: postgres
+  hostname: ""  # Set via GitLab CI
+  port: 5432
+  database: ""  # Set via GitLab CI
+  username: ""  # Set via GitLab CI
+  password: ""  # Set via GitLab CI
+  existingSecret: keycloak-db-secret
+
+## Deployment Configuration
+replicaCount: 2
+
+## Resource Configuration
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+  requests:
+    cpu: 1000m
+    memory: 1Gi
+
+## Service Configuration
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+  annotations: {}
+
+## Ingress Configuration
+ingress:
+  enabled: true
+  className: alb
+  hostname: keycloak.squad-exp-aws.boeing.com
+  path: /
+  pathType: Prefix
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/group.name: keycloak-alb
+    alb.ingress.kubernetes.io/healthcheck-path: /health/ready
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '30'
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '10'
+    alb.ingress.kubernetes.io/healthy-threshold-count: '2'
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: '3'
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    external-dns.alpha.kubernetes.io/hostname: keycloak.squad-exp-aws.boeing.com
+
+## Auto-scaling Configuration
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+## Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+## Security Context
+podSecurityContext:
+  enabled: true
+  fsGroup: 1000
+  runAsUser: 1000
+  runAsGroup: 1000
+
+containerSecurityContext:
+  enabled: true
+  runAsUser: 1000
+  runAsNonRoot: true
+  readOnlyRootFilesystem: false
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+## Health Checks
+# livenessProbe:
+#   enabled: true
+#   httpGet:
+#     path: /health/live
+#     port: 8080
+#   initialDelaySeconds: 120
+#   periodSeconds: 30
+#   timeoutSeconds: 10
+#   failureThreshold: 3
+
+# readinessProbe:
+#   enabled: true
+#   httpGet:
+#     path: /health/ready
+#     port: 8080
+#   initialDelaySeconds: 60
+#   periodSeconds: 15
+#   timeoutSeconds: 10
+#   failureThreshold: 3
+
+# startupProbe:
+#   enabled: true
+#   httpGet:
+#     path: /health/ready
+#     port: 8080
+#   initialDelaySeconds: 30
+#   periodSeconds: 10
+#   timeoutSeconds: 5
+#   failureThreshold: 30
+
+## Node Configuration
+nodeSelector: {}
+tolerations: []
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: keycloak
+          topologyKey: kubernetes.io/hostname
+
+## Extra Configuration
+extraEnvVars: []
+extraVolumes: []
+extraVolumeMounts: []

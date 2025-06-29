@@ -1,0 +1,89 @@
+stages:
+  - validate
+  - build
+  - deploy
+  - verify
+
+variables:
+  HELM_CHART_PATH: keycloak-helm/charts/keycloak
+  NAMESPACE: microservice-dev
+  CLUSTER_NAME: bds-eks-oas
+  AWS_DEFAULT_REGION: us-west-2
+  RELEASE_NAME: keycloak
+
+before_script:
+  - echo "Setting up environment..."
+  - aws --version
+  - kubectl version --client
+  - helm version
+  - aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_DEFAULT_REGION
+
+validate:
+  stage: validate
+  script:
+    - echo "Validating Helm chart..."
+    - helm lint $HELM_CHART_PATH
+    - helm template $RELEASE_NAME $HELM_CHART_PATH --dry-run --debug
+    - echo "Validating cluster connectivity..."
+    - kubectl cluster-info
+    - kubectl get namespace $NAMESPACE || kubectl create namespace $NAMESPACE
+  only:
+    - main
+    - develop
+
+build:
+  stage: build
+  script:
+    - echo "Packaging Helm chart..."
+    - helm package $HELM_CHART_PATH
+    - echo "Chart packaged successfully"
+  artifacts:
+    paths:
+      - "*.tgz"
+    expire_in: 1 hour
+  only:
+    - main
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying Keycloak with GitLab CI variables..."
+    - |
+      helm upgrade --install $RELEASE_NAME $HELM_CHART_PATH \
+        --namespace $NAMESPACE \
+        --create-namespace \
+        --set auth.adminPassword="$KEYCLOAK_ADMIN_PASSWORD" \
+        --set database.hostname="$RDS_ENDPOINT" \
+        --set database.username="$DB_USERNAME" \
+        --set database.password="$DB_PASSWORD" \
+        --set database.database="$DB_NAME" \
+        --wait \
+        --timeout=15m \
+        --atomic
+    - echo "Deployment completed successfully"
+  only:
+    - main
+
+verify:
+  stage: verify
+  script:
+    - echo "Verifying deployment..."
+    - kubectl get pods -n $NAMESPACE -l app.kubernetes.io/name=keycloak
+    - kubectl get svc -n $NAMESPACE -l app.kubernetes.io/name=keycloak
+    - kubectl get ingress -n $NAMESPACE
+    - echo "Waiting for pods to be ready..."
+    - kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=keycloak -n $NAMESPACE --timeout=600s
+    - echo "Getting application URL..."
+    - kubectl get ingress -n $NAMESPACE keycloak -o jsonpath='{.spec.rules[0].host}'
+    - echo "Deployment verification completed"
+  only:
+    - main
+
+cleanup:
+  stage: deploy
+  script:
+    - echo "Cleaning up failed deployment..."
+    - helm uninstall $RELEASE_NAME -n $NAMESPACE || true
+  when: on_failure
+  only:
+    - main

@@ -1,0 +1,11 @@
+apiVersion: v2
+name: keycloak
+description: Boeing Keycloak Helm Chart for EKS Deployment
+type: application
+version: 1.0.0
+appVersion: "23.0.3"
+keywords:
+  - keycloak
+  - identity
+  - authentication
+  - sso

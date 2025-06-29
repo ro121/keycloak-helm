@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "keycloak.labels" . | nindent 4 }}
+data:
+  KC_DB: {{ .Values.database.vendor }}
+  KC_DB_URL_PORT: {{ .Values.database.port | quote }}
+  KC_HOSTNAME_STRICT: "false"
+  KC_HTTP_ENABLED: "true"
+  KC_PROXY: "edge"
+  KC_HOSTNAME_STRICT_HTTPS: "false"
+  KC_HEALTH_ENABLED: "true"
+  KC_METRICS_ENABLED: "true"
+  KEYCLOAK_PRODUCTION: "true"
+  KC_LOG_LEVEL: "INFO"
+  KEYCLOAK_ADMIN: {{ .Values.auth.adminUser }}
